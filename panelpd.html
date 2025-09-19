@@ -8,7 +8,7 @@
 <style>
 body { margin:0; font-family:'Roboto',sans-serif; background: linear-gradient(135deg,#0b0c17,#1b1f38,#4fc3f7,#0b0c17); background-size:400% 400%; animation: gradientBG 20s ease infinite; color:#fff; min-height:100vh;}
 @keyframes gradientBG {0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
-.sidebar { width:220px; background: rgba(17,17,17,0.9); padding:20px; position:fixed; height:100%; box-shadow:0 0 10px rgba(0,0,0,0.5);}
+.sidebar { width:220px; background: rgba(17,17,17,0.85); padding:20px; position:fixed; height:100%; box-shadow:0 0 10px rgba(0,0,0,0.5);}
 .sidebar h2 { text-align:center; color:#ff6600; margin-bottom:20px; }
 .sidebar button { display:block; width:100%; margin:5px 0; padding:10px; border:none; border-radius:8px; background:#222; color:#fff; cursor:pointer; font-weight:bold; }
 .sidebar button.active, .sidebar button:hover { background:#ff6600; color:#000; }
@@ -125,7 +125,8 @@ function renderMembers(){
     });
     statusSelect.onchange = ()=>{ members[i].status=statusSelect.value; saveMembers(); };
 
-    const delBtn = document.createElement("button"); delBtn.className="delete-btn"; delBtn.innerText="Șterge";
+    const delBtn = document.createElement("button");
+    delBtn.className="delete-btn"; delBtn.innerText="Șterge";
     delBtn.onclick = ()=>{ members.splice(i,1); saveMembers(); renderSanctions(); };
 
     div.appendChild(rankInput);
@@ -174,16 +175,21 @@ function renderApplications(){
     const actions = document.createElement("div");
     actions.classList.add("item-actions");
 
-    const accept = document.createElement("button"); accept.className="accept-btn"; accept.innerText="Acceptă";
+    const accept = document.createElement("button");
+    accept.className="accept-btn"; accept.innerText="Acceptă";
     accept.onclick = ()=>{ a.status="Acceptat"; saveApplications(); };
 
-    const reject = document.createElement("button"); reject.className="reject-btn"; reject.innerText="Respinge";
+    const reject = document.createElement("button");
+    reject.className="reject-btn"; reject.innerText="Respinge";
     reject.onclick = ()=>{ a.status="Respins"; saveApplications(); };
 
-    const del = document.createElement("button"); del.className="delete-btn"; del.innerText="Șterge";
+    const del = document.createElement("button");
+    del.className="delete-btn"; del.innerText="Șterge";
     del.onclick = ()=>{ aplicatii.splice(i,1); saveApplications(); };
 
-    actions.appendChild(accept); actions.appendChild(reject); actions.appendChild(del);
+    actions.appendChild(accept);
+    actions.appendChild(reject);
+    actions.appendChild(del);
     div.appendChild(actions);
     container.appendChild(div);
   });
@@ -200,14 +206,11 @@ let sanctions = JSON.parse(localStorage.getItem("pdSanctions")) || [];
 function renderSanctions() {
   const container = document.getElementById("sanctionsList");
   container.innerHTML = "";
-
   members.forEach((m) => {
     const div = document.createElement("div");
     div.classList.add("item");
-
     const memberSanctions = sanctions.filter(s => s.member === m.name);
     const absenteCount = memberSanctions.filter(s => s.absenta === "Absent la ședință").length;
-
     div.innerHTML = `<strong>${m.name} (${m.rank})</strong> - Absențe: <span class="status">${absenteCount}</span>`;
 
     const input = document.createElement("input");
@@ -217,8 +220,7 @@ function renderSanctions() {
     const selectAbs = document.createElement("select");
     ["Prezent", "Absent la ședință"].forEach(s => {
       const opt = document.createElement("option");
-      opt.value = s;
-      opt.innerText = s;
+      opt.value = s; opt.innerText = s;
       selectAbs.appendChild(opt);
     });
 
@@ -226,14 +228,9 @@ function renderSanctions() {
     addBtn.className = "edit-btn"; addBtn.innerText = "Adaugă";
     addBtn.onclick = () => {
       if (!input.value.trim()) return;
-      sanctions.push({
-        member: m.name,
-        text: input.value.trim(),
-        absenta: selectAbs.value
-      });
+      sanctions.push({member: m.name, text: input.value.trim(), absenta: selectAbs.value});
       localStorage.setItem("pdSanctions", JSON.stringify(sanctions));
-      input.value = "";
-      selectAbs.selectedIndex = 0;
+      input.value = ""; selectAbs.selectedIndex = 0;
       renderSanctions();
     };
 
@@ -266,7 +263,7 @@ function renderSanctions() {
   });
 }
 
-// --- MODEL APLICAȚIE POLIȚIE ---
+// --- MODEL APLICAȚIE ---
 let modelPolitie = JSON.parse(localStorage.getItem("modelPolitie")) || ["Nume jucător","Motivație / Mesaj"];
 document.getElementById("modelPolitieTextarea").value = modelPolitie.join("\n");
 
@@ -287,9 +284,16 @@ function renderReclamatiiPolitie(){
   reclamatiiPolitie.forEach((r,i)=>{
     const div = document.createElement("div");
     div.className = "item";
-    div.innerHTML = `<strong>ID Tău:</strong> ${r.idT || "-"}<br>
-                     <strong>ID Reclamant:</strong> ${r.idR || "-"}<br>
-                     <strong>Link:</strong> <a href="${r.link}" target="_blank">${r.link}</a>`;
+
+    // compatibilitate vechi / nou
+    if(r.idT && r.idR && r.link){
+      div.innerHTML = `<strong>ID Tău:</strong> ${r.idT}<br>
+                       <strong>ID Reclamat:</strong> ${r.idR}<br>
+                       <strong>Link:</strong> <a href="${r.link}" target="_blank">${r.link}</a>`;
+    } else if(r.message){
+      div.innerHTML = `<strong>De la:</strong> ${r.from || "Necunoscut"}<br>${r.message}`;
+    }
+
     const delBtn = document.createElement("button");
     delBtn.className = "delete-btn";
     delBtn.innerText = "Șterge";
